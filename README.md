@@ -107,8 +107,8 @@ Create new like/dislike relation.
 ```typescript
 // Body interface
 interface Create_Like{
-  user_id: string
-  media_id: string
+  user_id: number
+  media_id: number
   media_type: 'MOV' | 'BOO' | 'SON'
   like_type: 'LK' | 'DLK' | 'BLK'
   rating?: float
@@ -201,8 +201,8 @@ Returns all the like/dislikes relations make by a given user.
 ```typescript
 
 interface Like_Relation{
-  id: string // Media id
-  user_id: string
+  id: int // Media id
+  user_id: int
   type: 'MOV' | 'BOO' | 'SON' // Media type
   rating?: float // given by the user searched
   like_type: 'LK' | 'DLK' | 'BLK' // Liked | Disliked | Blank (no info yet)
@@ -245,8 +245,8 @@ Returns all the like/dislikes relations of a given media id (book, movie, song).
 ```typescript
 
 interface Like_Relation{
-  id: string // Media id
-  user_id: string
+  id: number // Media id
+  user_id: number
   type: 'MOV' | 'BOO' | 'SON' // Media type
   rating?: float // given by the user searched
   like_type: 'LK' | 'DLK' | 'BLK' // Liked | Disliked | Blank (no info yet)
@@ -262,25 +262,21 @@ interface Get_Likes_Media{
 
 #### Get Rating
 
-Get average rating of a relation.
+Get average rating of a media.
 
 ```http
-  GET /likes/average/
+  GET /likes/average/${id}
 ```
 
 | Query Parameter | Type     | Description                |
 | :-------- | :------- | :------------------------- |
-| `user_id` | `int` | **Required**. user id |
-| `media_id` | `int` | **Required**. media id |
 | `media_type` | `enum('MOV', 'SON' , 'BOO')` | **Required**. media type |
 
 | Response Status | Type     | Description                |
 | :-------- | :------- | :------------------------- |
 | `200` | `success` | Returns media average |
-| `400` | `error` | "User id not provided" |
 | `400` | `error` | "Media id not provided" |
 | `400` | `error` | "Media type not provided" |
-| `404` | `error` | "Relation not found" |
 | `500` | `error` | Any other error message|
 
 ```typescript
