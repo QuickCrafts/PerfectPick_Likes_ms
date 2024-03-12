@@ -11,16 +11,21 @@ import (
 
 // API Structure
 
-func WriteJSON(w http.ResponseWriter, status int, v any) error {
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(status)
-	return json.NewEncoder(w).Encode(v)
+type APIServer struct {
+	listenAddr string
+	//store      Storage
 }
 
 type apiFunc func(http.ResponseWriter, *http.Request) error
 
 type ApiError struct {
 	Error string
+}
+
+func WriteJSON(w http.ResponseWriter, status int, v any) error {
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(status)
+	return json.NewEncoder(w).Encode(v)
 }
 
 func makeHTTPHandleFunc(f apiFunc) http.HandlerFunc {
@@ -31,13 +36,10 @@ func makeHTTPHandleFunc(f apiFunc) http.HandlerFunc {
 	}
 }
 
-type APIServer struct {
-	listenAddr string
-}
-
-func NewAPIServer(listenAddr string) *APIServer {
+func NewAPIServer(listenAddr string /*store Storage*/) *APIServer {
 	return &APIServer{
 		listenAddr: listenAddr,
+		//store:      store,
 	}
 }
 
@@ -106,7 +108,12 @@ func (s *APIServer) handleCreateLike(w http.ResponseWriter, r *http.Request) err
 	// @todo
 	// Need body
 	like := NewLike(1)
-	return WriteJSON(w, http.StatusOK, like)
+
+	// return WriteJSON(w, http.StatusBadRequest, "Guard failed") // 400
+	// return WriteJSON(w, http.StatusBadRequest, "User and Media already has a relation") // 400
+	// return WriteJSON(w, http.StatusInternalServerError, error) // 500
+
+	return WriteJSON(w, http.StatusCreated, like) // 201
 }
 
 func (s *APIServer) handleUpdateLike(w http.ResponseWriter, r *http.Request) error {
@@ -114,14 +121,27 @@ func (s *APIServer) handleUpdateLike(w http.ResponseWriter, r *http.Request) err
 	// Need body
 	params := mux.Vars(r)
 
-	return WriteJSON(w, http.StatusOK, params)
+	// return WriteJSON(w, http.StatusBadRequest, "Guard failed") // 400
+	// return WriteJSON(w, http.StatusBadRequest, "User id not provided") // 400
+	// return WriteJSON(w, http.StatusBadRequest, "Media id not provided") // 400
+	// return WriteJSON(w, http.StatusBadRequest, "Media type not provided") // 400
+	// return WriteJSON(w, http.StatusNotFound, "Relation not found") // 404
+	// return WriteJSON(w, http.StatusInternalServerError, error) // 500
+
+	return WriteJSON(w, http.StatusCreated, params) //201
 }
 
 func (s *APIServer) handleDeleteLike(w http.ResponseWriter, r *http.Request) error {
 	// @todo
 	params := mux.Vars(r)
 
-	return WriteJSON(w, http.StatusOK, params)
+	// return WriteJSON(w, http.StatusBadRequest, "User id not provided") // 400
+	// return WriteJSON(w, http.StatusBadRequest, "Media id not provided") // 400
+	// return WriteJSON(w, http.StatusBadRequest, "Media type not provided") // 400
+	// return WriteJSON(w, http.StatusNotFound, "Relation not found") // 404
+	// return WriteJSON(w, http.StatusInternalServerError, error) // 500
+
+	return WriteJSON(w, http.StatusNoContent, params) // 204
 }
 
 // /likes/user Functions
@@ -130,12 +150,20 @@ func (s *APIServer) handleCreateUser(w http.ResponseWriter, r *http.Request) err
 	// @todo
 	params := mux.Vars(r)
 
-	return WriteJSON(w, http.StatusOK, params)
+	// return WriteJSON(w, http.StatusBadRequest, "User id not provided") // 400
+	// return WriteJSON(w, http.StatusBadRequest, "USer already has an instance") // 400
+	// return WriteJSON(w, http.StatusInternalServerError, error) // 500
+
+	return WriteJSON(w, http.StatusCreated, params) // 201
 }
 
 func (s *APIServer) handleGetUserLikes(w http.ResponseWriter, r *http.Request) error {
 	// @todo
 	params := mux.Vars(r)
+
+	// return WriteJSON(w, http.StatusBadRequest, "User id not provided") // 400
+	// return WriteJSON(w, http.StatusNotFound, "User not found") // 404
+	// return WriteJSON(w, http.StatusInternalServerError, error) // 500
 
 	return WriteJSON(w, http.StatusOK, params)
 }
@@ -144,7 +172,11 @@ func (s *APIServer) handleDeleteUser(w http.ResponseWriter, r *http.Request) err
 	// @todo
 	params := mux.Vars(r)
 
-	return WriteJSON(w, http.StatusOK, params)
+	// return WriteJSON(w, http.StatusBadRequest, "User id not provided") // 400
+	// return WriteJSON(w, http.StatusNotFound, "User not found") // 404
+	// return WriteJSON(w, http.StatusInternalServerError, error) // 500
+
+	return WriteJSON(w, http.StatusNoContent, params)
 }
 
 // /likes/media Functions
@@ -153,12 +185,21 @@ func (s *APIServer) handleCreateMedia(w http.ResponseWriter, r *http.Request) er
 	// @todo
 	params := mux.Vars(r)
 
+	// return WriteJSON(w, http.StatusBadRequest, "Media id not provided") // 400
+	// return WriteJSON(w, http.StatusBadRequest, "Media already has an instance") // 400
+	// return WriteJSON(w, http.StatusInternalServerError, error) // 500
+
 	return WriteJSON(w, http.StatusOK, params)
 }
 
 func (s *APIServer) handleGetMediaLikes(w http.ResponseWriter, r *http.Request) error {
 	// @todo
 	params := mux.Vars(r)
+
+	// return WriteJSON(w, http.StatusBadRequest, "Media id not provided") // 400
+	// return WriteJSON(w, http.StatusBadRequest, "Media type not provided") // 400
+	// return WriteJSON(w, http.StatusNotFound, "Media not found") // 404
+	// return WriteJSON(w, http.StatusInternalServerError, error) // 500
 
 	return WriteJSON(w, http.StatusOK, params)
 }
@@ -167,7 +208,12 @@ func (s *APIServer) handleDeleteMedia(w http.ResponseWriter, r *http.Request) er
 	// @todo
 	params := mux.Vars(r)
 
-	return WriteJSON(w, http.StatusOK, params)
+	// return WriteJSON(w, http.StatusBadRequest, "Media id not provided") // 400
+	// return WriteJSON(w, http.StatusBadRequest, "Media type not provided") // 400
+	// return WriteJSON(w, http.StatusNotFound, "Media not found") // 404
+	// return WriteJSON(w, http.StatusInternalServerError, error) // 500
+
+	return WriteJSON(w, http.StatusNoContent, params)
 }
 
 // /likes/average Functions
@@ -180,6 +226,11 @@ func (s *APIServer) handleAverage(w http.ResponseWriter, r *http.Request) error 
 
 	// @todo
 	params := mux.Vars(r)
+
+	// return WriteJSON(w, http.StatusBadRequest, "Media id not provided") // 400
+	// return WriteJSON(w, http.StatusBadRequest, "Media type not provided") // 400
+	// return WriteJSON(w, http.StatusNotFound, "Media not found") // 404
+	// return WriteJSON(w, http.StatusInternalServerError, error) // 500
 
 	return WriteJSON(w, http.StatusOK, params)
 }
@@ -194,6 +245,10 @@ func (s *APIServer) handleWishlist(w http.ResponseWriter, r *http.Request) error
 
 	// @todo
 	params := mux.Vars(r)
+
+	// return WriteJSON(w, http.StatusBadRequest, "User id not provided") // 400
+	// return WriteJSON(w, http.StatusNotFound, "User not found") // 404
+	// return WriteJSON(w, http.StatusInternalServerError, error) // 500
 
 	return WriteJSON(w, http.StatusOK, params)
 }
