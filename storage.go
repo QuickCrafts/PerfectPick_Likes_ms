@@ -167,6 +167,8 @@ func (s *Neo4jStore) CreateLike(l *Like) error {
 
 // Update Functions
 func (s *Neo4jStore) UpdateLike(*UpdateLike) error {
+	//@todo
+	//queryLK := "MATCH (:User {id_user: $id_user})-[r]-(:Movie {id_movie: $id_media}) RETURN r"
 	return nil
 }
 
