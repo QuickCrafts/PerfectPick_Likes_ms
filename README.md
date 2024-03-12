@@ -25,7 +25,6 @@ Create user's node (instance) given a user id.
 | :-------- | :------- | :------------------------- |
 | `201` | `success` | "User instance created"|
 | `400` | `error` | "User id not provided" |
-| `400` | `error` | "User already has an instance" |
 | `500` | `error` | Any other error message|
 
 #### Create Media
@@ -48,7 +47,6 @@ Create media's node (instance) given a media id and media type.
 | `201` | `success` | "Media instance created"|
 | `400` | `error` | "Media id not provided" |
 | `400` | `error` | "Media type not provided" |
-| `400` | `error` | "Media already has an instance" |
 | `500` | `error` | Any other error message|
 
 #### Delete Media
@@ -71,7 +69,6 @@ Delete media's node (instance) given a media id and media type.
 | `204` | `success` | No content|
 | `400` | `error` | "Media id not provided" |
 | `400` | `error` | "Media type not provided" |
-| `404` | `error` | "Media not found" |
 | `500` | `error` | Any other error message|
 
 #### Delete user
@@ -89,7 +86,6 @@ Delete user's node (instance) given a user id.
 | :-------- | :------- | :------------------------- |
 | `204` | `success` | No content|
 | `400` | `error` | "User id not provided" |
-| `404` | `error` | "User not found" |
 | `500` | `error` | Any other error message|
 
 
@@ -255,7 +251,7 @@ interface Like_Relation{
 
 // Body interface
 interface Get_Likes_Media{
-  likes: interface Like_Relation[]
+  likes: Like_Relation[]
   avg_rating: float
 }
 ```
@@ -328,19 +324,25 @@ interface Get_Likes{
 
 ## Deployment
 
-To deploy this project run
+To deploy this project:
 
-[//]: <> (@todo correct)
+Deploy database
 
 ```bash
-  npm run deploy
+  ./run_DB.sh
 ```
+
+Deploy API
+
+```bash
+  ./run_API.sh
+```
+
+Call API using (http://localhost:3000)[http://localhost:3000]
 
 ## Run Locally
 
 Clone the project
-
-[//]: <> (@todo correct all)
 
 ```bash
   git clone https://github.com/QuickCrafts/PerfectPick_Likes_ms.git
@@ -352,14 +354,15 @@ Go to the project directory
   cd PerfectPick_Likes_ms
 ```
 
-Install dependencies
+Open Database
 
 ```bash
-  todo
+  ./run_DB.sh
 ```
 
 Start the server
 
 ```bash
-  todo
+  make run
 ```
+Call API using (http://localhost:3000)[http://localhost:3000]

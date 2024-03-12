@@ -106,15 +106,18 @@ func (s *APIServer) handleMedia(w http.ResponseWriter, r *http.Request) error {
 // /likes Functions
 
 func (s *APIServer) handleCreateLike(w http.ResponseWriter, r *http.Request) error {
-	// @todo
-	// Need body
-	like := NewLike(1)
+	createLike := new(Like)
 
-	// return WriteJSON(w, http.StatusBadRequest, "Guard failed") // 400
-	// return WriteJSON(w, http.StatusBadRequest, "User and Media already has a relation") // 400
-	// return WriteJSON(w, http.StatusInternalServerError, error) // 500
+	if err := json.NewDecoder(r.Body).Decode(createLike); err != nil {
+		return WriteJSON(w, http.StatusBadRequest, "Guard failed") // 400
+	}
 
-	return WriteJSON(w, http.StatusCreated, like) // 201
+	like := NewLike(createLike.UserID, createLike.MediaID, createLike.MediaType, createLike.LikeType, createLike.Wishlist, createLike.Rating)
+	if err := s.store.CreateLike(like); err != nil {
+		return WriteJSON(w, http.StatusInternalServerError, err) // 500
+	}
+
+	return WriteJSON(w, http.StatusCreated, "Relation created") // 201
 }
 
 func (s *APIServer) handleUpdateLike(w http.ResponseWriter, r *http.Request) error {
@@ -133,14 +136,33 @@ func (s *APIServer) handleUpdateLike(w http.ResponseWriter, r *http.Request) err
 }
 
 func (s *APIServer) handleDeleteLike(w http.ResponseWriter, r *http.Request) error {
-	// @todo
 	params := mux.Vars(r)
 
-	// return WriteJSON(w, http.StatusBadRequest, "User id not provided") // 400
-	// return WriteJSON(w, http.StatusBadRequest, "Media id not provided") // 400
-	// return WriteJSON(w, http.StatusBadRequest, "Media type not provided") // 400
-	// return WriteJSON(w, http.StatusNotFound, "Relation not found") // 404
-	// return WriteJSON(w, http.StatusInternalServerError, error) // 500
+	if params["user_id"] == "" {
+		return WriteJSON(w, http.StatusBadRequest, "User id not provided") // 400
+	}
+
+	if params["media_id"] == "" {
+		return WriteJSON(w, http.StatusBadRequest, "Media id not provided") // 400
+	}
+
+	if params["media_type"] == "" {
+		return WriteJSON(w, http.StatusBadRequest, "Media type not provided") // 400
+	}
+
+	user_id, err := strconv.Atoi(params["user_id"])
+	if err != nil {
+		return WriteJSON(w, http.StatusInternalServerError, err) // 500
+	}
+
+	media_id, err := strconv.Atoi(params["media_id"])
+	if err != nil {
+		return WriteJSON(w, http.StatusInternalServerError, err) // 500
+	}
+
+	if err := s.store.DeleteLike(user_id, media_id, params["media_type"]); err != nil {
+		return WriteJSON(w, http.StatusInternalServerError, err) // 500
+	}
 
 	return WriteJSON(w, http.StatusNoContent, params) // 204
 }
@@ -167,14 +189,24 @@ func (s *APIServer) handleCreateUser(w http.ResponseWriter, r *http.Request) err
 }
 
 func (s *APIServer) handleGetUserLikes(w http.ResponseWriter, r *http.Request) error {
-	// @todo
 	params := mux.Vars(r)
 
-	// return WriteJSON(w, http.StatusBadRequest, "User id not provided") // 400
-	// return WriteJSON(w, http.StatusNotFound, "User not found") // 404
-	// return WriteJSON(w, http.StatusInternalServerError, error) // 500
+	if params["id"] == "" {
+		return WriteJSON(w, http.StatusBadRequest, "User id not provided") // 400
+	}
 
-	return WriteJSON(w, http.StatusOK, params)
+	id, err := strconv.Atoi(params["id"])
+	if err != nil {
+		return WriteJSON(w, http.StatusInternalServerError, err) // 500
+	}
+
+	result, err := s.store.GetUserLikes(id)
+
+	if err != nil {
+		return WriteJSON(w, http.StatusInternalServerError, err) // 500
+	}
+
+	return WriteJSON(w, http.StatusOK, result)
 }
 
 func (s *APIServer) handleDeleteUser(w http.ResponseWriter, r *http.Request) error {
@@ -222,15 +254,28 @@ func (s *APIServer) handleCreateMedia(w http.ResponseWriter, r *http.Request) er
 }
 
 func (s *APIServer) handleGetMediaLikes(w http.ResponseWriter, r *http.Request) error {
-	// @todo
 	params := mux.Vars(r)
 
-	// return WriteJSON(w, http.StatusBadRequest, "Media id not provided") // 400
-	// return WriteJSON(w, http.StatusBadRequest, "Media type not provided") // 400
-	// return WriteJSON(w, http.StatusNotFound, "Media not found") // 404
-	// return WriteJSON(w, http.StatusInternalServerError, error) // 500
+	if params["id"] == "" {
+		return WriteJSON(w, http.StatusBadRequest, "Media id not provided") // 400
+	}
 
-	return WriteJSON(w, http.StatusOK, params)
+	id, err := strconv.Atoi(params["id"])
+	if err != nil {
+		return WriteJSON(w, http.StatusInternalServerError, err) // 500
+	}
+
+	if params["media_type"] == "" {
+		return WriteJSON(w, http.StatusBadRequest, "Media type not provided") // 400
+	}
+
+	result, err := s.store.GetMediaLikes(id, params["media_type"])
+
+	if err != nil {
+		return WriteJSON(w, http.StatusInternalServerError, err) // 500
+	}
+
+	return WriteJSON(w, http.StatusOK, result)
 }
 
 func (s *APIServer) handleDeleteMedia(w http.ResponseWriter, r *http.Request) error {
@@ -264,15 +309,28 @@ func (s *APIServer) handleAverage(w http.ResponseWriter, r *http.Request) error 
 		return fmt.Errorf("method not allowed %s", r.Method)
 	}
 
-	// @todo
 	params := mux.Vars(r)
 
-	// return WriteJSON(w, http.StatusBadRequest, "Media id not provided") // 400
-	// return WriteJSON(w, http.StatusBadRequest, "Media type not provided") // 400
-	// return WriteJSON(w, http.StatusNotFound, "Media not found") // 404
-	// return WriteJSON(w, http.StatusInternalServerError, error) // 500
+	if params["id"] == "" {
+		return WriteJSON(w, http.StatusBadRequest, "Media id not provided") // 400
+	}
 
-	return WriteJSON(w, http.StatusOK, params)
+	id, err := strconv.Atoi(params["id"])
+	if err != nil {
+		return WriteJSON(w, http.StatusInternalServerError, err) // 500
+	}
+
+	if params["media_type"] == "" {
+		return WriteJSON(w, http.StatusBadRequest, "Media type not provided") // 400
+	}
+
+	result, err := s.store.GetAverage(id, params["media_type"])
+
+	if err != nil {
+		return WriteJSON(w, http.StatusInternalServerError, err) // 500
+	}
+
+	return WriteJSON(w, http.StatusOK, result)
 }
 
 // /likes/wishlist Functions
@@ -283,12 +341,22 @@ func (s *APIServer) handleWishlist(w http.ResponseWriter, r *http.Request) error
 		return fmt.Errorf("method not allowed %s", r.Method)
 	}
 
-	// @todo
 	params := mux.Vars(r)
 
-	// return WriteJSON(w, http.StatusBadRequest, "User id not provided") // 400
-	// return WriteJSON(w, http.StatusNotFound, "User not found") // 404
-	// return WriteJSON(w, http.StatusInternalServerError, error) // 500
+	if params["id"] == "" {
+		return WriteJSON(w, http.StatusBadRequest, "User id not provided") // 400
+	}
 
-	return WriteJSON(w, http.StatusOK, params)
+	id, err := strconv.Atoi(params["id"])
+	if err != nil {
+		return WriteJSON(w, http.StatusInternalServerError, err) // 500
+	}
+
+	result, err := s.store.GetWishlist(id)
+
+	if err != nil {
+		return WriteJSON(w, http.StatusInternalServerError, err) // 500
+	}
+
+	return WriteJSON(w, http.StatusOK, result)
 }

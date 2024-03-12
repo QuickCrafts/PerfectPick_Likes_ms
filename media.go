@@ -1,17 +1,6 @@
 package main
 
-type Media struct {
-	UserID int `json:"id"`
-}
-
 type GetMediaLikes struct {
-}
-
-type RequestMediaLikes struct {
-}
-
-func NewMedia(id int) *Media {
-	return &Media{
-		UserID: id,
-	}
+	Likes     []LikeRelation `json:"likes"`
+	AvgRating float64        `json:"avg_rating"`
 }
