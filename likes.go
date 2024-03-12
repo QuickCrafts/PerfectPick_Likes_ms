@@ -13,6 +13,9 @@ type GetRating struct {
 type GetWishlist struct {
 }
 
+type RequestDeleteLikes struct {
+}
+
 func NewLike(id int) *Like {
 	return &Like{
 		UserID: id,

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -13,7 +14,7 @@ import (
 
 type APIServer struct {
 	listenAddr string
-	//store      Storage
+	store      Storage
 }
 
 type apiFunc func(http.ResponseWriter, *http.Request) error
@@ -36,10 +37,10 @@ func makeHTTPHandleFunc(f apiFunc) http.HandlerFunc {
 	}
 }
 
-func NewAPIServer(listenAddr string /*store Storage*/) *APIServer {
+func NewAPIServer(listenAddr string, store Storage) *APIServer {
 	return &APIServer{
 		listenAddr: listenAddr,
-		//store:      store,
+		store:      store,
 	}
 }
 
@@ -147,14 +148,22 @@ func (s *APIServer) handleDeleteLike(w http.ResponseWriter, r *http.Request) err
 // /likes/user Functions
 
 func (s *APIServer) handleCreateUser(w http.ResponseWriter, r *http.Request) error {
-	// @todo
 	params := mux.Vars(r)
 
-	// return WriteJSON(w, http.StatusBadRequest, "User id not provided") // 400
-	// return WriteJSON(w, http.StatusBadRequest, "USer already has an instance") // 400
-	// return WriteJSON(w, http.StatusInternalServerError, error) // 500
+	if params["id"] == "" {
+		return WriteJSON(w, http.StatusBadRequest, "User id not provided") // 400
+	}
 
-	return WriteJSON(w, http.StatusCreated, params) // 201
+	id, err := strconv.Atoi(params["id"])
+	if err != nil {
+		return WriteJSON(w, http.StatusInternalServerError, err) // 500
+	}
+
+	if err := s.store.CreateUser(id); err != nil {
+		return WriteJSON(w, http.StatusInternalServerError, err) // 500
+	}
+
+	return WriteJSON(w, http.StatusCreated, "User created") // 201
 }
 
 func (s *APIServer) handleGetUserLikes(w http.ResponseWriter, r *http.Request) error {
@@ -169,27 +178,47 @@ func (s *APIServer) handleGetUserLikes(w http.ResponseWriter, r *http.Request) e
 }
 
 func (s *APIServer) handleDeleteUser(w http.ResponseWriter, r *http.Request) error {
-	// @todo
 	params := mux.Vars(r)
 
-	// return WriteJSON(w, http.StatusBadRequest, "User id not provided") // 400
-	// return WriteJSON(w, http.StatusNotFound, "User not found") // 404
-	// return WriteJSON(w, http.StatusInternalServerError, error) // 500
+	if params["id"] == "" {
+		return WriteJSON(w, http.StatusBadRequest, "User id not provided") // 400
+	}
 
-	return WriteJSON(w, http.StatusNoContent, params)
+	id, err := strconv.Atoi(params["id"])
+	if err != nil {
+		return WriteJSON(w, http.StatusInternalServerError, err) // 500
+	}
+
+	if err := s.store.DeleteUser(id); err != nil {
+		return WriteJSON(w, http.StatusInternalServerError, err) // 500
+	}
+
+	return WriteJSON(w, http.StatusNoContent, "")
 }
 
 // /likes/media Functions
 
 func (s *APIServer) handleCreateMedia(w http.ResponseWriter, r *http.Request) error {
-	// @todo
 	params := mux.Vars(r)
 
-	// return WriteJSON(w, http.StatusBadRequest, "Media id not provided") // 400
-	// return WriteJSON(w, http.StatusBadRequest, "Media already has an instance") // 400
-	// return WriteJSON(w, http.StatusInternalServerError, error) // 500
+	if params["id"] == "" {
+		return WriteJSON(w, http.StatusBadRequest, "Media id not provided") // 400
+	}
 
-	return WriteJSON(w, http.StatusOK, params)
+	if params["media_type"] == "" {
+		return WriteJSON(w, http.StatusBadRequest, "Media type not provided") // 400
+	}
+
+	id, err := strconv.Atoi(params["id"])
+	if err != nil {
+		return WriteJSON(w, http.StatusInternalServerError, err) // 500
+	}
+
+	if err := s.store.CreateMedia(id, params["media_type"]); err != nil {
+		return WriteJSON(w, http.StatusInternalServerError, err) // 500
+	}
+
+	return WriteJSON(w, http.StatusCreated, "Media created") // 201
 }
 
 func (s *APIServer) handleGetMediaLikes(w http.ResponseWriter, r *http.Request) error {
@@ -205,15 +234,26 @@ func (s *APIServer) handleGetMediaLikes(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *APIServer) handleDeleteMedia(w http.ResponseWriter, r *http.Request) error {
-	// @todo
 	params := mux.Vars(r)
 
-	// return WriteJSON(w, http.StatusBadRequest, "Media id not provided") // 400
-	// return WriteJSON(w, http.StatusBadRequest, "Media type not provided") // 400
-	// return WriteJSON(w, http.StatusNotFound, "Media not found") // 404
-	// return WriteJSON(w, http.StatusInternalServerError, error) // 500
+	if params["id"] == "" {
+		return WriteJSON(w, http.StatusBadRequest, "Media id not provided") // 400
+	}
 
-	return WriteJSON(w, http.StatusNoContent, params)
+	if params["media_type"] == "" {
+		return WriteJSON(w, http.StatusBadRequest, "Media type not provided") // 400
+	}
+
+	id, err := strconv.Atoi(params["id"])
+	if err != nil {
+		return WriteJSON(w, http.StatusBadRequest, "Media id not provided") // 400
+	}
+
+	if err := s.store.DeleteMedia(id, params["media_type"]); err != nil {
+		return WriteJSON(w, http.StatusInternalServerError, err) // 500
+	}
+
+	return WriteJSON(w, http.StatusNoContent, "")
 }
 
 // /likes/average Functions
