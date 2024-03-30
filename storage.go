@@ -38,7 +38,7 @@ type Neo4jStore struct {
 
 func NewNeo4jStore() (*Neo4jStore, error) {
 	ctx := context.Background()
-	dbUri := "neo4j://localhost:7000"
+	dbUri := "neo4j://neo4j:7687" //"neo4j://localhost:7000" --> for local not docker
 	dbUser := "neo4j"
 	dbPassword := "0900pass"
 	driver, _ := neo4j.NewDriverWithContext(
