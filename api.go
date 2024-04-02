@@ -503,7 +503,7 @@ func (s *APIServer) handleSetMediaWish(w http.ResponseWriter, r *http.Request) e
 			return WriteJSON(w, http.StatusInternalServerError, err) // 500
 		}
 
-		return WriteJSON(w, http.StatusCreated, "Media added to user wishlist") // 201
+		return WriteJSON(w, http.StatusCreated, "Media removed to user wishlist") // 201
 
 	} else {
 		return WriteJSON(w, http.StatusBadRequest, "Action type not allowed") // 400
