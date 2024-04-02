@@ -127,15 +127,15 @@ func (s *Neo4jStore) SetLike(l *Like) error {
 	MERGE (n)-[r:PREF]->(m)
 	ON CREATE
 		SET
-			r.type = $type
-			r.media_id = $id_media
-			r.media_type = MOV
+			r.type = $type,
+			r.media_id = $id_media,
+			r.media_type = MOV,
 			r.user_id = $id_user
 	ON MATCH
 		SET
-			r.type = $type
-			r.media_id = $id_media
-			r.media_type = MOV
+			r.type = $type,
+			r.media_id = $id_media,
+			r.media_type = MOV,
 			r.user_id = $id_user
 	`
 
@@ -146,15 +146,15 @@ func (s *Neo4jStore) SetLike(l *Like) error {
 		MERGE (n)-[r:PREF]->(m)
 		ON CREATE
 			SET
-				r.type = $type
-				r.media_id = $id_media
-				r.media_type = SON
+				r.type = $type,
+				r.media_id = $id_media,
+				r.media_type = SON,
 				r.user_id = $id_user
 		ON MATCH
 			SET
-				r.type = $type
-				r.media_id = $id_media
-				r.media_type = SON
+				r.type = $type,
+				r.media_id = $id_media,
+				r.media_type = SON,
 				r.user_id = $id_user
 		`
 	} else if l.MediaType == "BOO" {
@@ -164,15 +164,15 @@ func (s *Neo4jStore) SetLike(l *Like) error {
 		MERGE (n)-[r:PREF]->(m)
 		ON CREATE
 			SET
-				r.type = $type
-				r.media_id = $id_media
-				r.media_type = BOO
+				r.type = $type,
+				r.media_id = $id_media,
+				r.media_type = BOO,
 				r.user_id = $id_user
 		ON MATCH
 			SET
-				r.type = $type
-				r.media_id = $id_media
-				r.media_type = BOO
+				r.type = $type,
+				r.media_id = $id_media,
+				r.media_type = BOO,
 				r.user_id = $id_user
 		`
 	}
@@ -516,14 +516,14 @@ func (s *Neo4jStore) SetAverage(i int, md string, tp string, rate float64) error
 	MERGE (n)-[r:RTE]->(m)
 	ON CREATE
 		SET
-			r.media_id = $id_media
-			r.media_type = MOV
+			r.media_id = $id_media,
+			r.media_type = MOV,
 			r.user_id = $id_user
 	ON MATCH
 		SET
-			r.rating = $rate
-			r.media_id = $id_media
-			r.media_type = MOV
+			r.rating = $rate,
+			r.media_id = $id_media,
+			r.media_type = MOV,
 			r.user_id = $id_user
 	`
 
@@ -534,15 +534,15 @@ func (s *Neo4jStore) SetAverage(i int, md string, tp string, rate float64) error
 		MERGE (n)-[r:RTE]->(m)
 		ON CREATE
 			SET
-				r.rating = $rate
-				r.media_id = $id_media
-				r.media_type = SON
+				r.rating = $rate,
+				r.media_id = $id_media,
+				r.media_type = SON,
 				r.user_id = $id_user
 		ON MATCH
 			SET
-				r.rating = $rate
-				r.media_id = $id_media
-				r.media_type = SON
+				r.rating = $rate,
+				r.media_id = $id_media,
+				r.media_type = SON,
 				r.user_id = $id_user
 		`
 	} else if tp == "BOO" {
@@ -552,15 +552,15 @@ func (s *Neo4jStore) SetAverage(i int, md string, tp string, rate float64) error
 		MERGE (n)-[r:RTE]->(m)
 		ON CREATE
 			SET
-				r.rating = $rate
-				r.media_id = $id_media
-				r.media_type = BOO
+				r.rating = $rate,
+				r.media_id = $id_media,
+				r.media_type = BOO,
 				r.user_id = $id_user
 		ON MATCH
 			SET
-				r.rating = $rate
-				r.media_id = $id_media
-				r.media_type = BOO
+				r.rating = $rate,
+				r.media_id = $id_media,
+				r.media_type = BOO,
 				r.user_id = $id_user
 		`
 	}
@@ -647,13 +647,13 @@ func (s *Neo4jStore) AddToWishlist(i int, md string, tp string) error {
 	MERGE (n)-[r:WSH]->(m)
 	ON CREATE
 		SET
-			r.media_id = $id_media
-			r.media_type = MOV
+			r.media_id = $id_media,
+			r.media_type = MOV,
 			r.user_id = $id_user
 	ON MATCH
 		SET
-			r.media_id = $id_media
-			r.media_type = MOV
+			r.media_id = $id_media,
+			r.media_type = MOV,
 			r.user_id = $id_user
 	`
 
@@ -664,13 +664,13 @@ func (s *Neo4jStore) AddToWishlist(i int, md string, tp string) error {
 		MERGE (n)-[r:WSH]->(m)
 		ON CREATE
 			SET
-				r.media_id = $id_media
-				r.media_type = SON
+				r.media_id = $id_media,
+				r.media_type = SON,
 				r.user_id = $id_user
 		ON MATCH
 			SET
-				r.media_id = $id_media
-				r.media_type = SON
+				r.media_id = $id_media,
+				r.media_type = SON,
 				r.user_id = $id_user
 		`
 	} else if tp == "BOO" {
@@ -680,13 +680,13 @@ func (s *Neo4jStore) AddToWishlist(i int, md string, tp string) error {
 		MERGE (n)-[r:WSH]->(m)
 		ON CREATE
 			SET
-				r.media_id = $id_media
-				r.media_type = BOO
+				r.media_id = $id_media,
+				r.media_type = BOO,
 				r.user_id = $id_user
 		ON MATCH
 			SET
-				r.media_id = $id_media
-				r.media_type = BOO
+				r.media_id = $id_media,
+				r.media_type = BOO,
 				r.user_id = $id_user
 		`
 	}

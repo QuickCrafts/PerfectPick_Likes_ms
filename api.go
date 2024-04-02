@@ -48,11 +48,17 @@ func (s *APIServer) Run() {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/likes", makeHTTPHandleFunc(s.handleLikes)).Queries("media_type", "{media_type}", "user_id", "{user_id}", "media_id", "{media_id}")
-	// router.HandleFunc("/likes", makeHTTPHandleFunc(s.handleLikes))
+	router.HandleFunc("/likes", makeHTTPHandleFunc(s.handleLikes))
 	router.HandleFunc("/likes/user/{id}", makeHTTPHandleFunc(s.handleUser)).Queries("media_type", "{media_type}", "preference", "{preference}")
+	router.HandleFunc("/likes/user/{id}", makeHTTPHandleFunc(s.handleUser)).Queries("media_type", "{media_type}")
+	router.HandleFunc("/likes/user/{id}", makeHTTPHandleFunc(s.handleUser)).Queries("preference", "{preference}")
+	router.HandleFunc("/likes/user/{id}", makeHTTPHandleFunc(s.handleUser))
 	router.HandleFunc("/likes/media/{id}", makeHTTPHandleFunc(s.handleMedia)).Queries("media_type", "{media_type}", "preference", "{preference}")
+	router.HandleFunc("/likes/media/{id}", makeHTTPHandleFunc(s.handleMedia)).Queries("media_type", "{media_type}")
+	router.HandleFunc("/likes/rate/{id}", makeHTTPHandleFunc(s.handleRate)).Queries("media_type", "{media_type}")
 	router.HandleFunc("/likes/rate/{id}", makeHTTPHandleFunc(s.handleRate)).Queries("media_type", "{media_type}", "user_id", "{user_id}")
-	router.HandleFunc("/likes/wishlist/{id}", makeHTTPHandleFunc(s.handleWishlist)).Queries("media_type", "{media_type}", "action_type", "{action_type}")
+	router.HandleFunc("/likes/wishlist/{id}", makeHTTPHandleFunc(s.handleWishlist)).Queries("media_type", "{media_type}")
+	router.HandleFunc("/likes/wishlist/{id}", makeHTTPHandleFunc(s.handleWishlist))
 
 	log.Println("REST API server running on port: ", s.listenAddr)
 
