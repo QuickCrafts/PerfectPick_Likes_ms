@@ -341,29 +341,29 @@ func (s *Neo4jStore) GetUserLikes(i int, media string, tp string) (*GetUserLikes
 
 func (s *Neo4jStore) GetMediaLikes(i string, media string, tp string) (*GetMediaLikes, error) {
 
-	queryLK := "MATCH (:Movie {id_movie: $id})-[r:PREF]-(n) RETURN r as relation"
+	queryLK := `MATCH (:Movie {id_movie: $id})-[r:PREF]-(n) RETURN r as relation`
 
 	if tp == "LK" {
-		queryLK = "MATCH (:Movie {id_movie: $id})-[r:PREF {type: LK}]-(n) RETURN r as relation"
+		queryLK = `MATCH (:Movie {id_movie: $id})-[r:PREF {type: "LK"}]-(n) RETURN r as relation`
 	} else if tp == "DLK" {
-		queryLK = "MATCH (:Movie {id_movie: $id})-[r:PREF {type: DLK}]-(n) RETURN r as relation"
+		queryLK = `MATCH (:Movie {id_movie: $id})-[r:PREF {type: "DLK"}]-(n) RETURN r as relation`
 	}
 
 	if media == "SON" {
-		queryLK = "MATCH (:Song {id_song: $id})-[r:PREF]-(n) RETURN r as relation"
+		queryLK = `MATCH (:Song {id_song: $id})-[r:PREF]-(n) RETURN r as relation`
 
 		if tp == "LK" {
-			queryLK = "MATCH (:Song {id_song: $id})-[r:PREF {type: LK}]-(n) RETURN r as relation"
+			queryLK = `MATCH (:Song {id_song: $id})-[r:PREF {type: "LK"}]-(n) RETURN r as relation`
 		} else if tp == "DLK" {
-			queryLK = "MATCH (:Song {id_song: $id})-[r:PREF {type: DLK}]-(n) RETURN r as relation"
+			queryLK = `MATCH (:Song {id_song: $id})-[r:PREF {type: "DLK"}]-(n) RETURN r as relation`
 		}
 	} else if media == "BOO" {
-		queryLK = "MATCH (:Book {id_book: $id})-[r:PREF]-(n) RETURN r as relation"
+		queryLK = `MATCH (:Book {id_book: $id})-[r:PREF]-(n) RETURN r as relation`
 
 		if tp == "LK" {
-			queryLK = "MATCH (:Book {id_book: $id})-[r:PREF {type: LK}]-(n) RETURN r as relation"
+			queryLK = `MATCH (:Book {id_book: $id})-[r:PREF {type: "LK"}]-(n) RETURN r as relation`
 		} else if tp == "DLK" {
-			queryLK = "MATCH (:Book {id_book: $id})-[r:PREF {type: DLK}]-(n) RETURN r as relation"
+			queryLK = `MATCH (:Book {id_book: $id})-[r:PREF {type: "DLK"}]-(n) RETURN r as relation`
 		}
 	}
 
