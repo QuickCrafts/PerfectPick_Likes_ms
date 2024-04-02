@@ -1,14 +1,10 @@
 package main
 
 type LikeRelation struct {
-	UserID    int `json:"user_id"`
-	MediaID   any `json:"id"`
+	UserID    any `json:"user_id"`
+	MediaID   any `json:"media_id"`
 	MediaType any `json:"type"`      // 'MOV' | 'BOO' | 'SON'
-	LikeType  any `json:"like_type"` // 'LK' | 'DLK' | 'BLK'
-	Wishlist  any `json:"wishlist"`
-
-	//Optional Attributes
-	Rating any `json:"rating"`
+	LikeType  any `json:"like_type"` // 'LK' | 'DLK'
 }
 
 type GetUserLikes struct {
@@ -18,13 +14,11 @@ type GetUserLikes struct {
 	Books  []LikeRelation `json:"books"`
 }
 
-func NewLikeRelation(id int, media any, mtype any, ltype any, w any, r any) *LikeRelation {
+func NewLikeRelation(id any, media any, mtype any, ltype any) *LikeRelation {
 	return &LikeRelation{
 		UserID:    id,
 		MediaID:   media,
 		MediaType: mtype,
 		LikeType:  ltype,
-		Wishlist:  w,
-		Rating:    r,
 	}
 }

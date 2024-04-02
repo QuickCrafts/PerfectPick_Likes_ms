@@ -10,45 +10,6 @@ Management of likes and dislikes relation between users and media (movie, books,
 
 ### Instance Management
 
-#### Create User
-
-Create user's node (instance) given a user id.
-
-```http
-  POST /likes/user/${id}
-```
-| Parameter | Type     | Description                |
-| :-------- | :------- | :------------------------- |
-| `id` | `int` | **Required**. user id |
-
-| Response Status | Type     | Description                |
-| :-------- | :------- | :------------------------- |
-| `201` | `success` | "User instance created"|
-| `400` | `error` | "User id not provided" |
-| `500` | `error` | Any other error message|
-
-#### Create Media
-
-Create media's node (instance) given a media id and media type.
-
-```http
-  POST /likes/media/${id}
-```
-| Parameter | Type     | Description                |
-| :-------- | :------- | :------------------------- |
-| `id` | `int` | **Required**. media id |
-
-| Query Parameter | Type     | Description                |
-| :-------- | :------- | :------------------------- |
-| `media_type` | `enum('MOV', 'SON' , 'BOO')` | **Required**. media type |
-
-| Response Status | Type     | Description                |
-| :-------- | :------- | :------------------------- |
-| `201` | `success` | "Media instance created"|
-| `400` | `error` | "Media id not provided" |
-| `400` | `error` | "Media type not provided" |
-| `500` | `error` | Any other error message|
-
 #### Delete Media
 
 Delete media's node (instance) given a media id and media type.
@@ -106,9 +67,9 @@ interface Create_Like{
   user_id: number
   media_id: number
   media_type: 'MOV' | 'BOO' | 'SON'
-  like_type: 'LK' | 'DLK' | 'BLK'
+  like_type: 'LK' | 'DLK'
   rating?: float
-  wishlist: boolean
+  wishlist?: boolean
 }
 ```
 
@@ -116,40 +77,6 @@ interface Create_Like{
 | :-------- | :------- | :------------------------- |
 | `201` | `success` | "Relation created"|
 | `400` | `error` | "Guard failed" |
-| `400` | `error` | "User and Media already has a relation" |
-| `500` | `error` | Any other error message|
-
-#### Update Like
-
-Update like/dislike relation.
-
-```http
-  PUT /likes
-```
-
-```typescript
-// Body interface
-interface Update_Like{
-  like_type?: 'LK' | 'DLK' | 'BLK'
-  rating?: float
-  wishlist?: boolean
-}
-```
-
-| Query Parameter | Type     | Description                |
-| :-------- | :------- | :------------------------- |
-| `user_id` | `int` | **Required**. user id |
-| `media_id` | `int` | **Required**. media id |
-| `media_type` | `enum('MOV', 'SON' , 'BOO')` | **Required**. media type |
-
-| Response Status | Type     | Description                |
-| :-------- | :------- | :------------------------- |
-| `201` | `success` | "Relation updated"|
-| `400` | `error` | "Guard failed" |
-| `400` | `error` | "User id not provided" |
-| `400` | `error` | "Media id not provided" |
-| `400` | `error` | "Media type not provided" |
-| `404` | `error` | "Relation not found" |
 | `500` | `error` | Any other error message|
 
 #### Delete Like

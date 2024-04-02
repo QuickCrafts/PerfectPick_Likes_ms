@@ -9,22 +9,24 @@ import (
 type Storage interface {
 	// Create
 	CreateUser(int) error
-	CreateMedia(int, string) error
-	CreateLike(*Like) error
-
-	//Update
-	UpdateLike(*UpdateLike) error
+	CreateMedia(string, string) error
+	SetLike(*Like) error
+	AddToWishlist(int, string, string) error
+	SetAverage(int, string, string, float64) error
 
 	// Get
-	GetUserLikes(int) (*GetUserLikes, error)
-	GetMediaLikes(int, string) (*GetMediaLikes, error)
-	GetAverage(int, string) (*GetRating, error)
-	GetWishlist(int) (*GetWishlist, error)
+	GetUserLikes(int, string, string) (*GetUserLikes, error)
+	GetMediaLikes(string, string, string) (*GetMediaLikes, error)
+	GetSpecificLike(int, string, string) (*LikeRelation, error)
+	GetAverage(string, string) (float64, error)
+	GetRating(string, string, int) (float64, error)
+	GetWishlist(int, string) (*GetWishlist, error)
 
 	//Delete
 	DeleteUser(int) error
-	DeleteMedia(int, string) error
-	DeleteLike(int, int, string) error
+	DeleteMedia(string, string) error
+	DeleteLike(int, string, string) error
+	RemoveFromWishlist(int, string, string) error
 
 	//Close Session
 	CloseSession()
@@ -38,7 +40,7 @@ type Neo4jStore struct {
 
 func NewNeo4jStore() (*Neo4jStore, error) {
 	ctx := context.Background()
-	dbUri := "neo4j://neo4j:7687" //"neo4j://localhost:7000" --> for local not docker
+	dbUri := "neo4j://neo4j:7687" //"neo4j://localhost:7000" --> for local | "neo4j://neo4j:7687"  ---> for docker
 	dbUser := "neo4j"
 	dbPassword := "0900pass"
 	driver, _ := neo4j.NewDriverWithContext(
@@ -87,7 +89,7 @@ func (s *Neo4jStore) CreateUser(i int) error {
 	return nil
 }
 
-func (s *Neo4jStore) CreateMedia(i int, tp string) error {
+func (s *Neo4jStore) CreateMedia(i string, tp string) error {
 
 	query := "CREATE (m:Movie {id_movie: $id})"
 
@@ -117,36 +119,66 @@ func (s *Neo4jStore) CreateMedia(i int, tp string) error {
 	return nil
 }
 
-func (s *Neo4jStore) CreateLike(l *Like) error {
+func (s *Neo4jStore) SetLike(l *Like) error {
 
-	query := "MATCH (m:Movie), (u:User) WHERE m.id_movie = $id_media AND u.id_user = $id_user CREATE (u)-[r:LK {rating: $r, wishlist: $w, like_type:'LK', media_type: 'MOV', media_id: $id_media, user_id: $id_user}]->(m)"
+	query := `
+	MERGE (n:User {id_user: $id_user})
+	MERGE (m:Movie {id_movie: $id_media})
+	MERGE (n)-[r:PREF]->(m)
+	ON CREATE
+		SET
+			r.type = $type
+			r.media_id = $id_media
+			r.media_type = MOV
+			r.user_id = $id_user
+	ON MATCH
+		SET
+			r.type = $type
+			r.media_id = $id_media
+			r.media_type = MOV
+			r.user_id = $id_user
+	`
 
-	if l.LikeType == "DLK" {
-		if l.MediaType == "SON" {
-			query = "MATCH (s:Song), (u:User) WHERE s.id_song = $id_media AND u.id_user = $id_user CREATE (u)-[r:DLK {rating: $r, wishlist: $w, like_type:'DLK', media_type: 'SON', media_id: $id_media, user_id: $id_user}]->(s)"
-		} else if l.MediaType == "BOO" {
-			query = "MATCH (b:Book), (u:User) WHERE b.id_book = $id_media AND u.id_user = $id_user CREATE (u)-[r:DLK {rating: $r, wishlist: $w, like_type:'DLK', media_type: 'BOO', media_id: $id_media, user_id: $id_user}]->(b)"
-		} else {
-			query = "MATCH (m:Movie), (u:User) WHERE m.id_movie = $id_media AND u.id_user = $id_user CREATE (u)-[r:DLK {rating: $r, wishlist: $w, like_type:'DLK', media_type: 'MOV', media_id: $id_media, user_id: $id_user}]->(m)"
-		}
-	} else if l.LikeType == "BLK" {
-		if l.MediaType == "SON" {
-			query = "MATCH (s:Song), (u:User) WHERE s.id_song = $id_media AND u.id_user = $id_user CREATE (u)-[r:BLK {rating: $r, wishlist: $w, like_type:'BLK', media_type: 'SON', media_id: $id_media, user_id: $id_user}]->(s)"
-		} else if l.MediaType == "BOO" {
-			query = "MATCH (b:Book), (u:User) WHERE b.id_book = $id_media AND u.id_user = $id_user CREATE (u)-[r:BLK {rating: $r, wishlist: $w, like_type:'BLK', media_type: 'BOO', media_id: $id_media, user_id: $id_user}]->(b)"
-		} else {
-			query = "MATCH (m:Movie), (u:User) WHERE m.id_movie = $id_media AND u.id_user = $id_user CREATE (u)-[r:BLK {rating: $r, wishlist: $w, like_type:'BLK', media_type: 'MOV', media_id: $id_media, user_id: $id_user}]->(m)"
-		}
-	} else {
-		if l.MediaType == "SON" {
-			query = "MATCH (s:Song), (u:User) WHERE s.id_song = $id_media AND u.id_user = $id_user CREATE (u)-[r:LK {rating: $r, wishlist: $w, like_type:'LK', media_type: 'SON', media_id: $id_media, user_id: $id_user}]->(s)"
-		} else if l.MediaType == "BOO" {
-			query = "MATCH (b:Book), (u:User) WHERE b.id_book = $id_media AND u.id_user = $id_user CREATE (u)-[r:LK {rating: $r, wishlist: $w, like_type:'LK', media_type: 'BOO', media_id: $id_media, user_id: $id_user}]->(b)"
-		}
+	if l.MediaType == "SON" {
+		query = `
+		MERGE (n:User {id_user: $id_user})
+		MERGE (m:Song {id_song: $id_media})
+		MERGE (n)-[r:PREF]->(m)
+		ON CREATE
+			SET
+				r.type = $type
+				r.media_id = $id_media
+				r.media_type = SON
+				r.user_id = $id_user
+		ON MATCH
+			SET
+				r.type = $type
+				r.media_id = $id_media
+				r.media_type = SON
+				r.user_id = $id_user
+		`
+	} else if l.MediaType == "BOO" {
+		query = `
+		MERGE (n:User {id_user: $id_user})
+		MERGE (m:Book {id_book: $id_media})
+		MERGE (n)-[r:PREF]->(m)
+		ON CREATE
+			SET
+				r.type = $type
+				r.media_id = $id_media
+				r.media_type = BOO
+				r.user_id = $id_user
+		ON MATCH
+			SET
+				r.type = $type
+				r.media_id = $id_media
+				r.media_type = BOO
+				r.user_id = $id_user
+		`
 	}
 
 	_, err := s.session.ExecuteWrite(s.ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
-		result, err := transaction.Run(s.ctx, query, map[string]interface{}{"id_media": l.MediaID, "id_user": l.UserID, "r": l.Rating, "w": l.Wishlist})
+		result, err := transaction.Run(s.ctx, query, map[string]interface{}{"id_media": l.MediaID, "id_user": l.UserID, "type": l.LikeType})
 		if err != nil {
 			return nil, err
 		}
@@ -162,20 +194,13 @@ func (s *Neo4jStore) CreateLike(l *Like) error {
 		return err
 	}
 
-	return nil
-}
-
-// Update Functions
-func (s *Neo4jStore) UpdateLike(*UpdateLike) error {
-	//@todo
-	//queryLK := "MATCH (:User {id_user: $id_user})-[r]-(:Movie {id_movie: $id_media}) RETURN r"
 	return nil
 }
 
 // Delete Functions
 func (s *Neo4jStore) DeleteUser(i int) error {
 	_, err := s.session.ExecuteWrite(s.ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
-		result, err := transaction.Run(s.ctx, "MATCH (u:User) WHERE u.id_user = $id DELETE u", map[string]interface{}{"id": i})
+		result, err := transaction.Run(s.ctx, "MATCH (u:User) WHERE u.id_user = $id DETACH DELETE u", map[string]interface{}{"id": i})
 		if err != nil {
 			return nil, err
 		}
@@ -194,13 +219,13 @@ func (s *Neo4jStore) DeleteUser(i int) error {
 	return nil
 }
 
-func (s *Neo4jStore) DeleteMedia(i int, tp string) error {
-	query := "MATCH (m:Movie) WHERE m.id_movie = $id DELETE m"
+func (s *Neo4jStore) DeleteMedia(i string, tp string) error {
+	query := "MATCH (m:Movie) WHERE m.id_movie = $id DETACH DELETE m"
 
 	if tp == "SON" {
-		query = "MATCH (s:Song) WHERE s.id_song = $id DELETE s"
+		query = "MATCH (s:Song) WHERE s.id_song = $id DETACH DELETE s"
 	} else if tp == "BOO" {
-		query = "MATCH (b:Book) WHERE b.id_book = $id DELETE b"
+		query = "MATCH (b:Book) WHERE b.id_book = $id DETACH DELETE b"
 	}
 
 	_, err := s.session.ExecuteWrite(s.ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
@@ -223,29 +248,13 @@ func (s *Neo4jStore) DeleteMedia(i int, tp string) error {
 	return nil
 }
 
-func (s *Neo4jStore) DeleteLike(user_id int, media_id int, tp string) error {
-	queryLK := "MATCH (:Movie {id_movie: $id_media})-[r:LK]-(:User {id_user: $id_user}) DELETE r"
+func (s *Neo4jStore) DeleteLike(user_id int, media_id string, tp string) error {
+	queryLK := "MATCH (:Movie {id_movie: $id_media})-[r:PREF]-(:User {id_user: $id_user}) DELETE r"
 
 	if tp == "SON" {
-		queryLK = "MATCH (:Song {id_song: $id_media})-[r:LK]-(:User {id_user: $id_user}) DELETE r"
+		queryLK = "MATCH (:Song {id_song: $id_media})-[r:PREF]-(:User {id_user: $id_user}) DELETE r"
 	} else if tp == "BOO" {
-		queryLK = "MATCH (:Book {id_book: $id_media})-[r:LK]-(:User {id_user: $id_user}) DELETE r"
-	}
-
-	queryDLK := "MATCH (:Movie {id_movie: $id_media})-[r:DLK]-(:User {id_user: $id_user}) DELETE r"
-
-	if tp == "SON" {
-		queryDLK = "MATCH (:Song {id_song: $id_media})-[r:DLK]-(:User {id_user: $id_user}) DELETE r"
-	} else if tp == "BOO" {
-		queryDLK = "MATCH (:Book {id_book: $id_media})-[r:DLK]-(:User {id_user: $id_user}) DELETE r"
-	}
-
-	queryBLK := "MATCH (:Movie {id_movie: $id_media})-[r:BLK]-(:User {id_user: $id_user}) DELETE r"
-
-	if tp == "SON" {
-		queryBLK = "MATCH (:Song {id_song: $id_media})-[r:BLK]-(:User {id_user: $id_user}) DELETE r"
-	} else if tp == "BOO" {
-		queryBLK = "MATCH (:Book {id_book: $id_media})-[r:BLK]-(:User {id_user: $id_user}) DELETE r"
+		queryLK = "MATCH (:Book {id_book: $id_media})-[r:PREF]-(:User {id_user: $id_user}) DELETE r"
 	}
 
 	_, err := s.session.ExecuteWrite(s.ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
@@ -265,70 +274,31 @@ func (s *Neo4jStore) DeleteLike(user_id int, media_id int, tp string) error {
 		return err
 	}
 
-	_, err = s.session.ExecuteWrite(s.ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
-		result, err := transaction.Run(s.ctx, queryDLK, map[string]interface{}{"id_media": media_id, "id_user": user_id})
-		if err != nil {
-			return nil, err
-		}
-
-		if result.Next(s.ctx) {
-			return result.Record().Values[0], nil
-		}
-
-		return nil, result.Err()
-	})
-
-	if err != nil {
-		return err
-	}
-
-	_, err = s.session.ExecuteWrite(s.ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
-		result, err := transaction.Run(s.ctx, queryBLK, map[string]interface{}{"id_media": media_id, "id_user": user_id})
-		if err != nil {
-			return nil, err
-		}
-
-		if result.Next(s.ctx) {
-			return result.Record().Values[0], nil
-		}
-
-		return nil, result.Err()
-	})
-
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
 // Get Functions
-func (s *Neo4jStore) GetUserLikes(i int) (*GetUserLikes, error) {
-	queryLK := "MATCH (:User {id_user: $id_user})-[r:LK]-(n) RETURN r as relation"
-	queryDLK := "MATCH (:User {id_user: $id_user})-[r:DLK]-(n) RETURN r as relation"
-	queryBLK := "MATCH (:User {id_user: $id_user})-[r:BLK]-(n) RETURN r as relation"
+func (s *Neo4jStore) GetUserLikes(i int, media string, tp string) (*GetUserLikes, error) {
+	queryLK := "MATCH (:User {id_user: $id_user})-[r:PREF]-(n) RETURN r as relation"
+
+	if media == "SON" {
+		queryLK = "MATCH (:User {id_user: $id_user})-[r:PREF]-(:Song) RETURN r as relation"
+	} else if media == "BOO" {
+		queryLK = "MATCH (:User {id_user: $id_user})-[r:PREF]-(:Book) RETURN r as relation"
+	} else if media == "MOV" {
+		queryLK = "MATCH (:User {id_user: $id_user})-[r:PREF]-(:Movie) RETURN r as relation"
+	}
+
+	if tp == "LK" {
+		queryLK = "MATCH (:User {id_user: $id_user})-[r:PREF {type: LK}]-(:Song) RETURN r as relation"
+	} else if tp == "DLK" {
+		queryLK = "MATCH (:User {id_user: $id_user})-[r:PREF {type: DLK}]-(:Book) RETURN r as relation"
+	}
 
 	var results []neo4j.Relationship
 	var movies []LikeRelation
 	var songs []LikeRelation
 	var books []LikeRelation
-
-	_, err := s.session.ExecuteWrite(s.ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
-		result, err := transaction.Run(s.ctx, queryDLK, map[string]interface{}{"id_user": i})
-		if err != nil {
-			return nil, err
-		}
-
-		for result.Next(s.ctx) {
-			results = append(results, result.Record().AsMap()["relation"].(neo4j.Relationship))
-		}
-
-		return nil, result.Err()
-	})
-
-	if err != nil {
-		return nil, err
-	}
 
 	_, errLK := s.session.ExecuteWrite(s.ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
 		result, errLK := transaction.Run(s.ctx, queryLK, map[string]interface{}{"id_user": i})
@@ -347,27 +317,10 @@ func (s *Neo4jStore) GetUserLikes(i int) (*GetUserLikes, error) {
 		return nil, errLK
 	}
 
-	_, errBLK := s.session.ExecuteWrite(s.ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
-		result, errBLK := transaction.Run(s.ctx, queryBLK, map[string]interface{}{"id_user": i})
-		if errBLK != nil {
-			return nil, errBLK
-		}
-
-		for result.Next(s.ctx) {
-			results = append(results, result.Record().AsMap()["relation"].(neo4j.Relationship))
-		}
-
-		return nil, result.Err()
-	})
-
-	if errBLK != nil {
-		return nil, errBLK
-	}
-
 	for r := 0; r < len(results); r++ {
 		props := results[r].Props
 		mediaType := props["media_type"]
-		like := NewLikeRelation(i, props["media_id"], mediaType, props["like_type"], props["wishlist"], props["rating"])
+		like := NewLikeRelation(i, props["media_id"], mediaType, props["type"])
 
 		if mediaType == "MOV" {
 			movies = append(movies, *like)
@@ -386,41 +339,36 @@ func (s *Neo4jStore) GetUserLikes(i int) (*GetUserLikes, error) {
 	}, nil
 }
 
-func (s *Neo4jStore) GetMediaLikes(i int, tp string) (*GetMediaLikes, error) {
-	queryLK := "MATCH (:Movie {id_movie: $id})-[r:LK]-(n) RETURN r as relation"
-	queryDLK := "MATCH (:Movie {id_movie: $id})-[r:DLK]-(n) RETURN r as relation"
-	queryBLK := "MATCH (:Movie {id_movie: $id})-[r:BLK]-(n) RETURN r as relation"
+func (s *Neo4jStore) GetMediaLikes(i string, media string, tp string) (*GetMediaLikes, error) {
 
-	if tp == "SON" {
-		queryLK = "MATCH (:Song {id_song: $id})-[r:LK]-(n) RETURN r as relation"
-		queryDLK = "MATCH (:Song {id_song: $id})-[r:DLK]-(n) RETURN r as relation"
-		queryBLK = "MATCH (:Song {id_song: $id})-[r:BLK]-(n) RETURN r as relation"
-	} else if tp == "BOO" {
-		queryLK = "MATCH (:Book {id_book: $id})-[r:LK]-(n) RETURN r as relation"
-		queryDLK = "MATCH (:Book {id_book: $id})-[r:DLK]-(n) RETURN r as relation"
-		queryBLK = "MATCH (:Book {id_book: $id})-[r:BLK]-(n) RETURN r as relation"
+	queryLK := "MATCH (:Movie {id_movie: $id})-[r:PREF]-(n) RETURN r as relation"
+
+	if tp == "LK" {
+		queryLK = "MATCH (:Movie {id_movie: $id})-[r:PREF {type: LK}]-(n) RETURN r as relation"
+	} else if tp == "DLK" {
+		queryLK = "MATCH (:Movie {id_movie: $id})-[r:PREF {type: DLK}]-(n) RETURN r as relation"
+	}
+
+	if media == "SON" {
+		queryLK = "MATCH (:Song {id_song: $id})-[r:PREF]-(n) RETURN r as relation"
+
+		if tp == "LK" {
+			queryLK = "MATCH (:Song {id_song: $id})-[r:PREF {type: LK}]-(n) RETURN r as relation"
+		} else if tp == "DLK" {
+			queryLK = "MATCH (:Song {id_song: $id})-[r:PREF {type: DLK}]-(n) RETURN r as relation"
+		}
+	} else if media == "BOO" {
+		queryLK = "MATCH (:Book {id_book: $id})-[r:PREF]-(n) RETURN r as relation"
+
+		if tp == "LK" {
+			queryLK = "MATCH (:Book {id_book: $id})-[r:PREF {type: LK}]-(n) RETURN r as relation"
+		} else if tp == "DLK" {
+			queryLK = "MATCH (:Book {id_book: $id})-[r:PREF {type: DLK}]-(n) RETURN r as relation"
+		}
 	}
 
 	var results []neo4j.Relationship
 	var likes []LikeRelation
-	var sumRating float64
-
-	_, err := s.session.ExecuteWrite(s.ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
-		result, err := transaction.Run(s.ctx, queryDLK, map[string]interface{}{"id": i})
-		if err != nil {
-			return nil, err
-		}
-
-		for result.Next(s.ctx) {
-			results = append(results, result.Record().AsMap()["relation"].(neo4j.Relationship))
-		}
-
-		return nil, result.Err()
-	})
-
-	if err != nil {
-		return nil, err
-	}
 
 	_, errLK := s.session.ExecuteWrite(s.ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
 		result, errLK := transaction.Run(s.ctx, queryLK, map[string]interface{}{"id": i})
@@ -439,79 +387,32 @@ func (s *Neo4jStore) GetMediaLikes(i int, tp string) (*GetMediaLikes, error) {
 		return nil, errLK
 	}
 
-	_, errBLK := s.session.ExecuteWrite(s.ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
-		result, errBLK := transaction.Run(s.ctx, queryBLK, map[string]interface{}{"id": i})
-		if errBLK != nil {
-			return nil, errBLK
-		}
-
-		for result.Next(s.ctx) {
-			results = append(results, result.Record().AsMap()["relation"].(neo4j.Relationship))
-		}
-
-		return nil, result.Err()
-	})
-
-	if errBLK != nil {
-		return nil, errBLK
-	}
-
-	sumRating = 0.0
 	for r := 0; r < len(results); r++ {
 		props := results[r].Props
 		mediaType := props["media_type"]
-		rating := props["rating"]
-		like := NewLikeRelation(i, props["media_id"], mediaType, props["like_type"], props["wishlist"], rating)
+		like := NewLikeRelation(props["user_id"], i, mediaType, props["type"])
 		likes = append(likes, *like)
-
-		if rating != -1 {
-			sumRating = sumRating + rating.(float64)
-		}
 	}
 
 	return &GetMediaLikes{
-		Likes:     likes,
-		AvgRating: sumRating / float64(len(results)),
+		Likes: likes,
 	}, nil
 }
 
-func (s *Neo4jStore) GetAverage(i int, tp string) (*GetRating, error) {
-	queryLK := "MATCH (:Movie {id_movie: $id})-[r:LK]-(n) RETURN r as relation"
-	queryDLK := "MATCH (:Movie {id_movie: $id})-[r:DLK]-(n) RETURN r as relation"
-	queryBLK := "MATCH (:Movie {id_movie: $id})-[r:BLK]-(n) RETURN r as relation"
+func (s *Neo4jStore) GetSpecificLike(i int, media_id string, media string) (*LikeRelation, error) {
 
-	if tp == "SON" {
-		queryLK = "MATCH (:Song {id_song: $id})-[r:LK]-(n) RETURN r as relation"
-		queryDLK = "MATCH (:Song {id_song: $id})-[r:DLK]-(n) RETURN r as relation"
-		queryBLK = "MATCH (:Song {id_song: $id})-[r:BLK]-(n) RETURN r as relation"
-	} else if tp == "BOO" {
-		queryLK = "MATCH (:Book {id_book: $id})-[r:LK]-(n) RETURN r as relation"
-		queryDLK = "MATCH (:Book {id_book: $id})-[r:DLK]-(n) RETURN r as relation"
-		queryBLK = "MATCH (:Book {id_book: $id})-[r:BLK]-(n) RETURN r as relation"
+	queryLK := "MATCH (:Movie {id_movie: $id})-[r:PREF]-(:User {id_user: $user_id}) RETURN r as relation"
+
+	if media == "SON" {
+		queryLK = "MATCH (:Song {id_song: $id})-[r:PREF]-(:User {id_user: $user_id}) RETURN r as relation"
+	} else if media == "BOO" {
+		queryLK = "MATCH (:Book {id_book: $id})-[r:PREF]-(:User {id_user: $user_id}) RETURN r as relation"
 	}
 
 	var results []neo4j.Relationship
-	var sumRating float64
-
-	_, err := s.session.ExecuteWrite(s.ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
-		result, err := transaction.Run(s.ctx, queryDLK, map[string]interface{}{"id": i})
-		if err != nil {
-			return nil, err
-		}
-
-		for result.Next(s.ctx) {
-			results = append(results, result.Record().AsMap()["relation"].(neo4j.Relationship))
-		}
-
-		return nil, result.Err()
-	})
-
-	if err != nil {
-		return nil, err
-	}
 
 	_, errLK := s.session.ExecuteWrite(s.ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
-		result, errLK := transaction.Run(s.ctx, queryLK, map[string]interface{}{"id": i})
+		result, errLK := transaction.Run(s.ctx, queryLK, map[string]interface{}{"id": media_id, "user_id": i})
 		if errLK != nil {
 			return nil, errLK
 		}
@@ -527,10 +428,29 @@ func (s *Neo4jStore) GetAverage(i int, tp string) (*GetRating, error) {
 		return nil, errLK
 	}
 
-	_, errBLK := s.session.ExecuteWrite(s.ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
-		result, errBLK := transaction.Run(s.ctx, queryBLK, map[string]interface{}{"id": i})
-		if errBLK != nil {
-			return nil, errBLK
+	props := results[0].Props
+	mediaType := props["media_type"]
+	like := NewLikeRelation(i, media_id, mediaType, props["type"])
+
+	return like, nil
+}
+
+func (s *Neo4jStore) GetAverage(i string, tp string) (float64, error) {
+	queryLK := "MATCH (:Movie {id_movie: $id})-[r:RTE]-(n) RETURN r as relation"
+
+	if tp == "SON" {
+		queryLK = "MATCH (:Song {id_song: $id})-[r:RTE]-(n) RETURN r as relation"
+	} else if tp == "BOO" {
+		queryLK = "MATCH (:Book {id_book: $id})-[r:RTE]-(n) RETURN r as relation"
+	}
+
+	var results []neo4j.Relationship
+	var sumRating float64
+
+	_, errLK := s.session.ExecuteWrite(s.ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
+		result, errLK := transaction.Run(s.ctx, queryLK, map[string]interface{}{"id": i})
+		if errLK != nil {
+			return nil, errLK
 		}
 
 		for result.Next(s.ctx) {
@@ -540,8 +460,8 @@ func (s *Neo4jStore) GetAverage(i int, tp string) (*GetRating, error) {
 		return nil, result.Err()
 	})
 
-	if errBLK != nil {
-		return nil, errBLK
+	if errLK != nil {
+		return 0.0, errLK
 	}
 
 	sumRating = 0.0
@@ -553,27 +473,24 @@ func (s *Neo4jStore) GetAverage(i int, tp string) (*GetRating, error) {
 		}
 	}
 
-	return &GetRating{
-		MediaID:   i,
-		MediaType: tp,
-		AvgRating: sumRating / float64(len(results)),
-	}, nil
+	return sumRating / float64(len(results)), nil
 }
 
-func (s *Neo4jStore) GetWishlist(i int) (*GetWishlist, error) {
-	queryLK := "MATCH (:User {id_user: $id_user})-[r:LK {wishlist: true}]-(n) RETURN r as relation"
-	queryDLK := "MATCH (:User {id_user: $id_user})-[r:DLK {wishlist: true}]-(n) RETURN r as relation"
-	queryBLK := "MATCH (:User {id_user: $id_user})-[r:BLK {wishlist: true}]-(n) RETURN r as relation"
+func (s *Neo4jStore) GetRating(i string, tp string, u int) (float64, error) {
+	queryLK := "MATCH (:Movie {id_movie: $id})-[r:RTE]-(:User {id_user:$user_id}) RETURN r as relation"
+
+	if tp == "SON" {
+		queryLK = "MATCH (:Song {id_song: $id})-[r:RTE]-(:User {id_user:$user_id}) RETURN r as relation"
+	} else if tp == "BOO" {
+		queryLK = "MATCH (:Book {id_book: $id})-[r:RTE]-(:User {id_user:$user_id}) RETURN r as relation"
+	}
 
 	var results []neo4j.Relationship
-	var movies []int64
-	var songs []int64
-	var books []int64
 
-	_, err := s.session.ExecuteWrite(s.ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
-		result, err := transaction.Run(s.ctx, queryDLK, map[string]interface{}{"id_user": i})
-		if err != nil {
-			return nil, err
+	_, errLK := s.session.ExecuteWrite(s.ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
+		result, errLK := transaction.Run(s.ctx, queryLK, map[string]interface{}{"id": i, "user_id": u})
+		if errLK != nil {
+			return nil, errLK
 		}
 
 		for result.Next(s.ctx) {
@@ -583,9 +500,106 @@ func (s *Neo4jStore) GetWishlist(i int) (*GetWishlist, error) {
 		return nil, result.Err()
 	})
 
-	if err != nil {
-		return nil, err
+	if errLK != nil {
+		return 0.0, errLK
 	}
+
+	props := results[0].Props
+
+	return props["rating"].(float64), nil
+}
+
+func (s *Neo4jStore) SetAverage(i int, md string, tp string, rate float64) error {
+	query := `
+	MERGE (n:User {id_user: $id_user})
+	MERGE (m:Movie {id_movie: $id_media})
+	MERGE (n)-[r:RTE]->(m)
+	ON CREATE
+		SET
+			r.media_id = $id_media
+			r.media_type = MOV
+			r.user_id = $id_user
+	ON MATCH
+		SET
+			r.rating = $rate
+			r.media_id = $id_media
+			r.media_type = MOV
+			r.user_id = $id_user
+	`
+
+	if tp == "SON" {
+		query = `
+		MERGE (n:User {id_user: $id_user})
+		MERGE (m:Song {id_song: $id_media})
+		MERGE (n)-[r:RTE]->(m)
+		ON CREATE
+			SET
+				r.rating = $rate
+				r.media_id = $id_media
+				r.media_type = SON
+				r.user_id = $id_user
+		ON MATCH
+			SET
+				r.rating = $rate
+				r.media_id = $id_media
+				r.media_type = SON
+				r.user_id = $id_user
+		`
+	} else if tp == "BOO" {
+		query = `
+		MERGE (n:User {id_user: $id_user})
+		MERGE (m:Book {id_book: $id_media})
+		MERGE (n)-[r:RTE]->(m)
+		ON CREATE
+			SET
+				r.rating = $rate
+				r.media_id = $id_media
+				r.media_type = BOO
+				r.user_id = $id_user
+		ON MATCH
+			SET
+				r.rating = $rate
+				r.media_id = $id_media
+				r.media_type = BOO
+				r.user_id = $id_user
+		`
+	}
+
+	_, err := s.session.ExecuteWrite(s.ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
+		result, err := transaction.Run(s.ctx, query, map[string]interface{}{"id_media": md, "id_user": i, "rate": rate})
+		if err != nil {
+			return nil, err
+		}
+
+		if result.Next(s.ctx) {
+			return result.Record().Values[0], nil
+		}
+
+		return nil, result.Err()
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Neo4jStore) GetWishlist(i int, tp string) (*GetWishlist, error) {
+	queryLK := "MATCH (:User {id_user: $id_user})-[r:WSH]-(n) RETURN r as relation"
+
+	if tp == "SON" {
+		queryLK = "MATCH (:User {id_user: $id_user})-[r:WSH]-(:Song) RETURN r as relation"
+	} else if tp == "BOO" {
+		queryLK = "MATCH (:User {id_user: $id_user})-[r:WSH]-(:Book) RETURN r as relation"
+	} else if tp == "MOV" {
+		queryLK = "MATCH (:User {id_user: $id_user})-[r:WSH]-(:Movie) RETURN r as relation"
+	}
+
+	var results []neo4j.Relationship
+	var movies []string
+	var songs []string
+	var books []string
 
 	_, errLK := s.session.ExecuteWrite(s.ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
 		result, errLK := transaction.Run(s.ctx, queryLK, map[string]interface{}{"id_user": i})
@@ -604,27 +618,10 @@ func (s *Neo4jStore) GetWishlist(i int) (*GetWishlist, error) {
 		return nil, errLK
 	}
 
-	_, errBLK := s.session.ExecuteWrite(s.ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
-		result, errBLK := transaction.Run(s.ctx, queryBLK, map[string]interface{}{"id_user": i})
-		if errBLK != nil {
-			return nil, errBLK
-		}
-
-		for result.Next(s.ctx) {
-			results = append(results, result.Record().AsMap()["relation"].(neo4j.Relationship))
-		}
-
-		return nil, result.Err()
-	})
-
-	if errBLK != nil {
-		return nil, errBLK
-	}
-
 	for r := 0; r < len(results); r++ {
 		props := results[r].Props
 		mediaType := props["media_type"]
-		mediaID := props["media_id"].(int64)
+		mediaID := props["media_id"].(string)
 
 		if mediaType == "MOV" {
 			movies = append(movies, mediaID)
@@ -641,4 +638,104 @@ func (s *Neo4jStore) GetWishlist(i int) (*GetWishlist, error) {
 		Songs:  songs,
 		Books:  books,
 	}, nil
+}
+
+func (s *Neo4jStore) AddToWishlist(i int, md string, tp string) error {
+	query := `
+	MERGE (n:User {id_user: $id_user})
+	MERGE (m:Movie {id_movie: $id_media})
+	MERGE (n)-[r:WSH]->(m)
+	ON CREATE
+		SET
+			r.media_id = $id_media
+			r.media_type = MOV
+			r.user_id = $id_user
+	ON MATCH
+		SET
+			r.media_id = $id_media
+			r.media_type = MOV
+			r.user_id = $id_user
+	`
+
+	if tp == "SON" {
+		query = `
+		MERGE (n:User {id_user: $id_user})
+		MERGE (m:Song {id_song: $id_media})
+		MERGE (n)-[r:WSH]->(m)
+		ON CREATE
+			SET
+				r.media_id = $id_media
+				r.media_type = SON
+				r.user_id = $id_user
+		ON MATCH
+			SET
+				r.media_id = $id_media
+				r.media_type = SON
+				r.user_id = $id_user
+		`
+	} else if tp == "BOO" {
+		query = `
+		MERGE (n:User {id_user: $id_user})
+		MERGE (m:Book {id_book: $id_media})
+		MERGE (n)-[r:WSH]->(m)
+		ON CREATE
+			SET
+				r.media_id = $id_media
+				r.media_type = BOO
+				r.user_id = $id_user
+		ON MATCH
+			SET
+				r.media_id = $id_media
+				r.media_type = BOO
+				r.user_id = $id_user
+		`
+	}
+
+	_, err := s.session.ExecuteWrite(s.ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
+		result, err := transaction.Run(s.ctx, query, map[string]interface{}{"id_media": md, "id_user": i})
+		if err != nil {
+			return nil, err
+		}
+
+		if result.Next(s.ctx) {
+			return result.Record().Values[0], nil
+		}
+
+		return nil, result.Err()
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Neo4jStore) RemoveFromWishlist(user_id int, media_id string, tp string) error {
+	queryLK := "MATCH (:Movie {id_movie: $id_media})-[r:WSH]-(:User {id_user: $id_user}) DELETE r"
+
+	if tp == "SON" {
+		queryLK = "MATCH (:Song {id_song: $id_media})-[r:WSH]-(:User {id_user: $id_user}) DELETE r"
+	} else if tp == "BOO" {
+		queryLK = "MATCH (:Book {id_book: $id_media})-[r:WSH]-(:User {id_user: $id_user}) DELETE r"
+	}
+
+	_, err := s.session.ExecuteWrite(s.ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
+		result, err := transaction.Run(s.ctx, queryLK, map[string]interface{}{"id_media": media_id, "id_user": user_id})
+		if err != nil {
+			return nil, err
+		}
+
+		if result.Next(s.ctx) {
+			return result.Record().Values[0], nil
+		}
+
+		return nil, result.Err()
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
