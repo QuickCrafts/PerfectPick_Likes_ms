@@ -13,6 +13,9 @@ services:
       - ./db/conf:/conf
       - ./db/logs:/logs
       - ./db/plugins:/plugins
+    networks:
+      - perfectpickusersnetwork
+
   api:
     build: .
     container_name: "PerfectPick_Likes_ms"
@@ -20,3 +23,9 @@ services:
       - 3000:3000
     depends_on:
       - neo4j
+    networks:
+      - perfectpickusersnetwork
+
+networks:
+  perfectpickusersnetwork:
+    external: true
