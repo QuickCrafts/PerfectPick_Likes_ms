@@ -129,13 +129,13 @@ func (s *Neo4jStore) SetLike(l *Like) error {
 		SET
 			r.type = $type,
 			r.media_id = $id_media,
-			r.media_type = MOV,
+			r.media_type = "MOV",
 			r.user_id = $id_user
 	ON MATCH
 		SET
 			r.type = $type,
 			r.media_id = $id_media,
-			r.media_type = MOV,
+			r.media_type = "MOV",
 			r.user_id = $id_user
 	`
 
@@ -148,13 +148,13 @@ func (s *Neo4jStore) SetLike(l *Like) error {
 			SET
 				r.type = $type,
 				r.media_id = $id_media,
-				r.media_type = SON,
+				r.media_type = "SON",
 				r.user_id = $id_user
 		ON MATCH
 			SET
 				r.type = $type,
 				r.media_id = $id_media,
-				r.media_type = SON,
+				r.media_type = "SON",
 				r.user_id = $id_user
 		`
 	} else if l.MediaType == "BOO" {
@@ -166,13 +166,13 @@ func (s *Neo4jStore) SetLike(l *Like) error {
 			SET
 				r.type = $type,
 				r.media_id = $id_media,
-				r.media_type = BOO,
+				r.media_type = "BOO",
 				r.user_id = $id_user
 		ON MATCH
 			SET
 				r.type = $type,
 				r.media_id = $id_media,
-				r.media_type = BOO,
+				r.media_type = "BOO",
 				r.user_id = $id_user
 		`
 	}
@@ -517,13 +517,13 @@ func (s *Neo4jStore) SetAverage(i int, md string, tp string, rate float64) error
 	ON CREATE
 		SET
 			r.media_id = $id_media,
-			r.media_type = MOV,
+			r.media_type = "MOV",
 			r.user_id = $id_user
 	ON MATCH
 		SET
 			r.rating = $rate,
 			r.media_id = $id_media,
-			r.media_type = MOV,
+			r.media_type = "MOV",
 			r.user_id = $id_user
 	`
 
@@ -536,13 +536,13 @@ func (s *Neo4jStore) SetAverage(i int, md string, tp string, rate float64) error
 			SET
 				r.rating = $rate,
 				r.media_id = $id_media,
-				r.media_type = SON,
+				r.media_type = "SON",
 				r.user_id = $id_user
 		ON MATCH
 			SET
 				r.rating = $rate,
 				r.media_id = $id_media,
-				r.media_type = SON,
+				r.media_type = "SON",
 				r.user_id = $id_user
 		`
 	} else if tp == "BOO" {
@@ -554,13 +554,13 @@ func (s *Neo4jStore) SetAverage(i int, md string, tp string, rate float64) error
 			SET
 				r.rating = $rate,
 				r.media_id = $id_media,
-				r.media_type = BOO,
+				r.media_type = "BOO",
 				r.user_id = $id_user
 		ON MATCH
 			SET
 				r.rating = $rate,
 				r.media_id = $id_media,
-				r.media_type = BOO,
+				r.media_type = "BOO",
 				r.user_id = $id_user
 		`
 	}
@@ -648,12 +648,12 @@ func (s *Neo4jStore) AddToWishlist(i int, md string, tp string) error {
 	ON CREATE
 		SET
 			r.media_id = $id_media,
-			r.media_type = MOV,
+			r.media_type = "MOV",
 			r.user_id = $id_user
 	ON MATCH
 		SET
 			r.media_id = $id_media,
-			r.media_type = MOV,
+			r.media_type = "MOV",
 			r.user_id = $id_user
 	`
 
@@ -665,12 +665,12 @@ func (s *Neo4jStore) AddToWishlist(i int, md string, tp string) error {
 		ON CREATE
 			SET
 				r.media_id = $id_media,
-				r.media_type = SON,
+				r.media_type = "SON",
 				r.user_id = $id_user
 		ON MATCH
 			SET
 				r.media_id = $id_media,
-				r.media_type = SON,
+				r.media_type = "SON",
 				r.user_id = $id_user
 		`
 	} else if tp == "BOO" {
@@ -681,12 +681,12 @@ func (s *Neo4jStore) AddToWishlist(i int, md string, tp string) error {
 		ON CREATE
 			SET
 				r.media_id = $id_media,
-				r.media_type = BOO,
+				r.media_type = "BOO",
 				r.user_id = $id_user
 		ON MATCH
 			SET
 				r.media_id = $id_media,
-				r.media_type = BOO,
+				r.media_type = "BOO",
 				r.user_id = $id_user
 		`
 	}
