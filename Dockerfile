@@ -18,6 +18,8 @@ WORKDIR /build
 
 COPY . /build
 
+EXPOSE 3000
+
 # Install Dockerize
 ENV DOCKERIZE_VERSION v0.6.1
 RUN wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
@@ -26,6 +28,5 @@ RUN wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSI
 
 RUN cd /build && go build -o bin/PerfectPick_Likes_ms .
 
-EXPOSE 3000
 
 ENTRYPOINT ["dockerize", "-wait", "tcp://neo4j:7687", "-timeout", "60s", "/build/bin/PerfectPick_Likes_ms"]
