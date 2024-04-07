@@ -14,18 +14,19 @@ services:
       - ./db/logs:/logs
       - ./db/plugins:/plugins
     networks:
-      - perfectpickusersnetwork
+      - perfectpicknetwork
 
   api:
-    build: .
-    container_name: "PerfectPick_Likes_ms"
+    build: ./PerfectPick_Likes_ms # to build all services from root
+    # build: . to build locally
+    container_name: PerfectPick_Likes_ms
     ports:
       - 3000:3000
     depends_on:
       - neo4j
     networks:
-      - perfectpickusersnetwork
+      - perfectpicknetwork
 
 networks:
-  perfectpickusersnetwork:
+  perfectpicknetwork:
     external: true
