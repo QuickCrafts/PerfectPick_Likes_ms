@@ -1,4 +1,4 @@
-version: '3.8'
+
 services:
   neo4j:
     image: neo4j:4.4.3-community
@@ -17,8 +17,8 @@ services:
       - perfectpicknetwork
 
   api:
-    # build: ./PerfectPick_Likes_ms # to build all services from root
-    build: . # to build locally
+    build: ./PerfectPick_Likes_ms # to build all services from root
+    #build: . # to build locally
     container_name: PerfectPick_Likes_ms
     ports:
       - 3000:3000
